@@ -38,4 +38,8 @@ func SendHomeInspectionToBackend(homeInspection *models.HomeInspection) {
 	defer func(Body io.ReadCloser) {
 		_ = Body.Close()
 	}(response.Body)
+
+	if response.StatusCode != 201 {
+		panic("Error al registrar la Inspección de Vivienda en la Base de Datos")
+	}
 }
