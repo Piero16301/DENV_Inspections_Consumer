@@ -1,2 +1,2 @@
-# DENV_Inspections_Consumer
+# DENV Inspections Consumer
 Consumidor para el registro de inspecciones de vivienda y registros de vectores.
