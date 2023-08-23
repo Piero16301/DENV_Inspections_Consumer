@@ -1,32 +1,31 @@
 package main
 
 import (
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
-	"github.com/rs/cors"
-	"log"
-	"net/http"
+	"DENV_Inspections_Consumer/configs"
+	"DENV_Inspections_Consumer/controllers"
+	"DENV_Inspections_Consumer/models"
+	"encoding/json"
+	"fmt"
+	"github.com/IBM/sarama"
 )
 
 func main() {
-	// Enrutador de endpoints
-	router := chi.NewRouter()
+	message, err := configs.Consumer.ConsumePartition("register-home-inspection", 0, sarama.OffsetOldest)
+	if err != nil {
+		panic(err)
+	}
 
-	// Middleware para CORS
-	router.Use(middleware.RequestID)
-	router.Use(middleware.RealIP)
-	router.Use(middleware.Logger)
-	router.Use(middleware.Recoverer)
+	for {
+		var homeInspection models.HomeInspection
+		messages := <-message.Messages()
+		err = json.Unmarshal(messages.Value, &homeInspection)
+		if err != nil {
+			panic(err)
+		}
 
-	// Rutas para agregar de inspecciones de viviendas y registros de vectores
-	//router.Mount("/home-inspections", routes.HomeInspectionResource{}.Routes())
-	//router.Mount("/vector-records", routes.VectorRecordResource{}.Routes())
+		// Enviar Inspección de Vivienda a Backend
+		controllers.SendHomeInspectionToBackend(&homeInspection)
 
-	// Habilitar CORS para método POST
-	corsRouter := cors.New(cors.Options{
-		AllowedMethods: []string{"POST"},
-	}).Handler(router)
-
-	// Iniciar servidor en el puerto 8080
-	log.Fatal(http.ListenAndServe(":8080", corsRouter))
+		fmt.Println("Inspección de Vivienda registrada en la Base de Datos")
+	}
 }
